@@ -11,12 +11,18 @@ import os
 import re
 import smtplib
 from email.message import EmailMessage
+import toml 
+
+# Load email credentials from secrets.toml
+email_credentials = toml.load(".streamlit/secrets.toml")
+email_address = email_credentials["email"]
+email_password = email_credentials["password"].replace("\xa0", " ")
 
 def send_email(name, email, phone, message):
     try:
         msg = EmailMessage()
         msg['Subject'] = "New Contact Form Submission"
-        msg['From'] = "your_email@example.com"
+        msg['From'] = email_address
         msg['To'] = "your_destination_email@example.com"
         
         msg.set_content(f"""
@@ -28,15 +34,13 @@ def send_email(name, email, phone, message):
 
         # Connect to SMTP server
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            password= "kvhc dofx brsm roqw"
-            smtp.login("hvparashar23@gmail.com", password)
+            smtp.login(email_address, email_password)
             smtp.send_message(msg)
 
         return True
     except Exception as e:
         st.error(f"Failed to send email: {e}")
         return False
-
 
 # =====================
 # Helper functions for data persistence
@@ -116,10 +120,16 @@ page_bg_img = """
 st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # =====================
+# HYSConsulting Branding
+# =====================
+st.image("logo/HYSConsulting.png", width=100)  # Replace with your logo URL
+st.markdown("<h5 style='text-align: center;'>Developed by HYSConsulting</h5>", unsafe_allow_html=True)
+
+# =====================
 # Main Title
 # =====================
-
 st.title("🌈 Hope for Kids - Therapy & Support for Autistic Children")
+
 st.markdown("""
 Welcome to **Hope for Kids**, a nurturing space where we offer personalized therapy and support services
 for children with autism. Our team of certified therapists is here to support your child’s journey.
@@ -129,14 +139,15 @@ for children with autism. Our team of certified therapists is here to support yo
 # Tabs for main sections
 # =====================
 
-home, therapies, team, trends, stories, newsletter, contact = st.tabs([
+home, therapies, team, trends, stories, newsletter, contact, chatbot = st.tabs([
     "🏠 Home",
     "🧠 Therapies",
     "👩‍⚕️ Our Team",
     "📊 Autistic Search Trends",
     "📖 Stories of Hope",
     "📰 Newsletter Signup",
-    "📞 Contact Us"
+    "📞 Contact Us",
+    "🤖 Chatbot"
 ])
 
 # ======== HOME =========
@@ -183,16 +194,17 @@ with trends:
     keyword_list = [k.strip() for k in keywords.split(",") if k.strip()]
 
     if st.button("Get Trends"):
-        if keyword_list:
-            data = get_trends_data(keyword_list, timeframe=timeframe)
-            if data is not None and not data.empty:
-                df = data.reset_index()
-                fig = px.line(df, x='date', y=keyword_list, title='Search Trends Over Time')
-                st.plotly_chart(fig, use_container_width=True)
+        with st.spinner("Fetching trends..."):
+            if keyword_list:
+                data = get_trends_data(keyword_list, timeframe=timeframe)
+                if data is not None and not data.empty:
+                    df = data.reset_index()
+                    fig = px.line(df, x='date', y=keyword_list, title='Search Trends Over Time')
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("No data available. Try different keywords or timeframe.")
             else:
-                st.warning("No data available. Try different keywords or timeframe.")
-        else:
-            st.warning("Please enter at least one keyword.")
+                st.warning("Please enter at least one keyword.")
 
 # ======== STORIES =========
 with stories:
@@ -262,11 +274,35 @@ with contact:
 
         if submitted:
             if name and email and message:
-                st.success("Thank you! We'll get back to you shortly.")
-                # Placeholder for email sending logic and WhatsApp notification
-                # You can integrate your SMTP email or WhatsApp API here
+                if send_email(name, email, phone, message):
+                    st.success("Thank you! We'll get back to you shortly.")
+                else:
+                    st.warning("There was an issue sending your message.")
             else:
                 st.warning("Please fill all required fields.")
+
+# ======== CHATBOT =========
+with chatbot:
+    st.header("🤖 Chatbot")
+    st.markdown("Ask me anything about therapy sessions, prices, or autism!")
+
+    user_input = st.text_input("Your Question:")
+    
+    if user_input:
+        user_input = user_input.lower()
+        if "therapy" in user_input:
+            response = "We offer various therapies including Speech Therapy, Occupational Therapy, and Behavioral Therapy. Please specify which therapy you are interested in."
+        elif "price" in user_input:
+            response = "Our therapy sessions are affordable and vary based on the type of therapy. Please contact us for detailed pricing."
+        elif "autism" in user_input:
+            response = "Autism is a developmental disorder that affects communication and behavior. We provide specialized support for children with autism."
+        elif "hi" or "hello" in user_input:
+            response = "Hi, hope you are well! please let me know how I can assist you?"
+
+        else:
+            response = "Please share the contact details thriugh ""contact us"" so that we can have connect with you to explain"
+
+        st.write(f"**Chatbot:** {response}")
 
 st.markdown("---")
 st.caption("© 2025 Hope for Kids | Empowering Every Child")
