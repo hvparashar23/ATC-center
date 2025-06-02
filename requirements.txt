@@ -5,3 +5,7 @@ pandas
 plotly
 smtplib
 email
+toml
+os
+re
+time
