@@ -3,3 +3,5 @@ Pillow
 pytrends
 pandas
 plotly
+smtplib
+email
