@@ -9,6 +9,34 @@ import plotly.express as px
 import json
 import os
 import re
+import smtplib
+from email.message import EmailMessage
+
+def send_email(name, email, phone, message):
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = "New Contact Form Submission"
+        msg['From'] = "your_email@example.com"
+        msg['To'] = "your_destination_email@example.com"
+        
+        msg.set_content(f"""
+        Name: {name}
+        Email: {email}
+        Phone: {phone}
+        Message: {message}
+        """)
+
+        # Connect to SMTP server
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            password= "kvhc dofx brsm roqw"
+            smtp.login("hvparashar23@gmail.com", password)
+            smtp.send_message(msg)
+
+        return True
+    except Exception as e:
+        st.error(f"Failed to send email: {e}")
+        return False
+
 
 # =====================
 # Helper functions for data persistence
